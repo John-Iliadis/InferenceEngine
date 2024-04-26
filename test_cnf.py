@@ -1,6 +1,7 @@
+"""test_cnf.py: Tests cnf.py"""
+
 from cnf import eliminate_implications, move_not_inwards, distribute_and_over_or, to_cnf
-from utils import associate, dissociate
-from expr import Expr, expr, Symbol
+from expr import Expr, expr, Symbol, associate, dissociate
 
 
 def test_dissociate():

@@ -1,8 +1,11 @@
-from expr import Expr
-from utils import is_symbol, associate, first
+"""cnf.py: This file contains all the functions required for converting an expression to conjunctive_normal_form."""
+
+from expr import Expr, is_symbol, associate
+from utils import first
 
 
 def to_cnf(s: 'Expr'):
+    """Converts a propositional logical sentence to conjunctive normal form."""
     s = eliminate_implications(s)
     s = move_not_inwards(s)
     s = distribute_and_over_or(s)
@@ -27,10 +30,7 @@ def eliminate_implications(s: 'Expr') -> 'Expr':
 
 
 def move_not_inwards(s):
-    """Rewrite sentence s by moving negation sign inward.
-    move_not_inwards(~(A || B))
-    (~A & ~B)
-    """
+    """Rewrite sentence s by moving negation sign inward."""
     if s.op == '~':
         def NOT(b): return move_not_inwards(~b)
 
@@ -50,10 +50,7 @@ def move_not_inwards(s):
 
 def distribute_and_over_or(s: 'Expr'):
     """Given a sentence s consisting of conjunctions and disjunctions
-    of literals, return an equivalent sentence in CNF.
-    distribute_and_over_or((A & B) || C)
-    ((A || C) & (B || C))
-    """
+    of literals, returns an equivalent sentence in CNF."""
     if s.op == '||':
         s = associate('||', s.args)
         if s.op != '||':
