@@ -6,11 +6,13 @@ from typing import Union
 
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> bool:
+    """A truth table enumeration algorithm for deciding propositional entailment."""
     symbols = list(get_symbols(kb & query))
     return tt_check_all(kb, query, symbols, {})
 
 
 def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict) -> bool:
+    """Auxiliary routine to implement tt_entails."""
     if not symbols:
         if pl_true(kb, model):
             result = pl_true(query, model)
