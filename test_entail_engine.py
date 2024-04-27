@@ -22,10 +22,10 @@ def test_pl_true():
 
 
 def test_tt_entails():
-    kb1 = expr('A & (B | C) & D & E & ~(F | G)')
+    kb1 = expr('A & (B || C) & D & E & ~(F || G)')
     query_1 = expr('A & D & E & ~F & ~G')
 
-    kb2 = expr('P | Q')
+    kb2 = expr('P || Q')
     query_2 = expr('Q')
 
     kb3 = expr('P & Q')
