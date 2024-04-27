@@ -9,8 +9,7 @@ def test_pl_true():
     model_1 = {Expr('a'): False, Expr('b'): True}
 
     expr2 = expr('(magical & horned) ==> mythical')
-    model_2 = {Expr('magical'): True, Expr('mythical')
-                    : False, Expr('horned'): True}
+    model_2 = {Expr('magical'): True, Expr('mythical')               : False, Expr('horned'): True}
 
     expr3 = expr(
         '((smoke & heat) ==> fire) <=> ((smoke ==> fire) || (heat ==> fire))')
@@ -34,3 +33,6 @@ def test_tt_entails():
     assert tt_entails(kb1, query_1) is True
     assert tt_entails(kb2, query_2) is False
     assert tt_entails(kb3, query_3) is True
+
+
+test_tt_entails()
