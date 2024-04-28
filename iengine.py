@@ -2,6 +2,10 @@ import sys
 from data_convertor import *
 from entail_engine import *
 from fc import *
+from bc import *
+from PropDefiniteKB import *
+from expr import *
+
 
 file_name, p, q = data_convertor()
 method = sys.argv[2]
@@ -17,8 +21,9 @@ def switch(method):  # to switch between different search algorithms
     elif method.lower() == "fc":
         result = pl_fc_entails(definite_clauses_KB, expr(q))
         return result
-        # elif method.lower() == "bc":
-        #     return
+    elif method.lower() == "bc":
+        result = pl_bc_entails(definite_clauses_KB, expr(q))
+        return result
     else:
         print("Invalid method")
 
@@ -27,9 +32,11 @@ def main():
     result = switch(method)
     if len(sys.argv) < 3:
         print("Please Enter Correct Argument")
-    if result is not None:
+    if result:
         symbol_str = ', '.join(str(symbol) for symbol in symbols)
         print("YES: " + symbol_str)
+    else:
+        print("NO")
 
 
 main()
