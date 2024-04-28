@@ -1,61 +1,10 @@
-from entail_engine import *
-from cnf import *
-from collections import defaultdict, Counter
+from collections import defaultdict
 from data_convertor import *
 from expr import *
+from KB import *
+from PropKB import *
 
 file_name, p, q = data_convertor()
-
-
-class KB:
-    def __init__(self, sentence=None):
-        if sentence:
-            self.tell(sentence)
-
-    def tell(self, sentence):
-        """Add the sentence to the KB."""
-        raise NotImplementedError
-
-    def ask(self, query):
-        """Return a substitution that makes the query true, or, failing that, return False."""
-        return first(self.ask_generator(query), default=False)
-
-    def ask_generator(self, query):
-        """Yield all the substitutions that make query true."""
-        raise NotImplementedError
-
-    def retract(self, sentence):
-        """Remove sentence from the KB."""
-        raise NotImplementedError
-
-
-class PropKB(KB):
-    """A KB for propositional logic. Inefficient, with no indexing."""
-
-    def __init__(self, sentence=None):
-        super().__init__(sentence)
-        self.clauses = []
-
-    def tell(self, sentence):
-        """Add the sentence's clauses to the KB."""
-        self.clauses.extend(conjuncts(to_cnf(sentence)))
-
-    def ask_generator(self, query):
-        """Yield the empty substitution {} if KB entails query; else no results."""
-        if tt_entails(Expr('&', *self.clauses), query):
-            yield {}
-
-    def ask_if_true(self, query):
-        """Return True if the KB entails query, else return False."""
-        for _ in self.ask_generator(query):
-            return True
-        return False
-
-    def retract(self, sentence):
-        """Remove the sentence's clauses from the KB."""
-        for c in conjuncts(to_cnf(sentence)):
-            if c in self.clauses:
-                self.clauses.remove(c)
 
 
 class PropDefiniteKB(PropKB):
@@ -80,22 +29,6 @@ class PropDefiniteKB(PropKB):
         return [c for c in self.clauses if c.op == '==>' and p in conjuncts(c.args[0])]
 
 
-def is_definite_clause(s):
-    """Returns True for exprs s of the form A & B & ... & C ==> D,
-    where all literals are positive. In clause form, this is
-    ~A | ~B | ... | ~C | D, where exactly one clause is positive.
-    >>> is_definite_clause(expr('Farmer(Mac)'))
-    True
-    """
-    if is_symbol(s.op):
-        return True
-    elif s.op == '==>':
-        antecedent, consequent = s.args
-        return is_symbol(consequent.op) and all(is_symbol(arg.op) for arg in conjuncts(antecedent))
-    else:
-        return False
-
-
 def pl_fc_entails(kb, q):
     """
     [Figure 7.15]
@@ -117,14 +50,6 @@ def pl_fc_entails(kb, q):
                 if count[c] == 0:
                     agenda.append(c.args[1])
     return False
-
-
-def is_prop_symbol(s):
-    """A proposition logic symbol is an initial-uppercase string.
-    >>> is_prop_symbol('exe')
-    False
-    """
-    return is_symbol(s) and s[0].isupper()
 
 
 definite_clauses_KB = PropDefiniteKB()
