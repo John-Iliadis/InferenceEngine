@@ -100,16 +100,20 @@ def pl_fc_entails(kb, q) -> bool:
         print(agenda)
         p = agenda.pop()
         if p == q:
+            print("fc_symbols: ")
+            print(fc_symbols)
+            fc_symbols.add(p)
             return True
         if not inferred[p]:
             inferred[p] = True
-            fc_symbols.add(p)
             print(kb.clauses_with_premise(p))
             for c in kb.clauses_with_premise(p):
                 count[c] -= 1
-                print(c)
+                fc_symbols.add(c.args[1])
                 if count[c] == 0:
                     agenda.append(c.args[1])
+                    print("fc_symbols: ")
+                    print(fc_symbols)
 
     return False
 
