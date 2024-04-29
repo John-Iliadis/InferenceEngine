@@ -19,6 +19,3 @@ def data_convertor():
     p = [s.rstrip() for s in p[:-1]]
     p = [s.replace('=>', '==>') for s in p]
     return file_name, p, q
-
-
-data_convertor()

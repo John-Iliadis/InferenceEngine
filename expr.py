@@ -149,4 +149,4 @@ def is_prop_symbol(s):
     >>> is_prop_symbol('exe')
     False
     """
-    return is_symbol(s) and s[0].isupper()
+    return is_symbol(s)
