@@ -1,10 +1,8 @@
 import sys
-from data_convertor import *
-from entail_engine import *
-from fc import *
-from bc import *
-from PropDefiniteKB import *
-from expr import *
+from data_convertor import data_convertor
+from entail_engine import tt_entails, pl_fc_entails, pl_bc_entails, get_fc_symbols, get_bc_symbols
+from KB import PropDefiniteKB
+from expr import expr
 
 file_name, p, q = data_convertor()
 method = sys.argv[2]
