@@ -1,8 +1,14 @@
 """entail_engine.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols
+from expr import Expr, is_symbol, get_symbols, is_prop_symbol
 from utils import extend
 from typing import Union
+from collections import defaultdict
+from cnf import conjuncts
+
+fc_symbols = set()
+bc_symbols = []
+symbol_list = set()
 
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> bool:
@@ -75,3 +81,63 @@ def pl_true(exp: Union['Expr', bool], model: dict) -> Union[bool, None]:
         return pt == qt
 
     raise ValueError('Illegal operator in logic expression' + str(exp))
+
+
+def pl_fc_entails(kb, q) -> bool:
+    """
+    [Figure 7.15]
+    Use forward chaining to see if a PropDefiniteKB entails symbol q.
+    >>> pl_fc_entails(horn_clauses_KB, expr('Q'))
+    True
+    """
+    count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
+    inferred = defaultdict(bool)
+    agenda = [s for s in kb.clauses if is_prop_symbol(s.op)]
+    for item in agenda:
+        fc_symbols.add(item)
+
+    while agenda:
+        p = agenda.pop()
+        if p == q:
+            return True
+        if not inferred[p]:
+            inferred[p] = True
+            for c in kb.clauses_with_premise(p):
+                count[c] -= 1
+                fc_symbols.add(c.args[1])
+                if count[c] == 0:
+                    agenda.append(c.args[1])
+
+    return False
+
+
+def get_fc_symbols():
+    return fc_symbols
+
+
+def pl_bc_entails(kb, q) -> bool:
+    inferred = defaultdict(bool)
+    agenda = [q]
+    prop_symbol = [s for s in kb.clauses if is_prop_symbol(s.op)]
+
+    while agenda:
+        p = agenda.pop()
+        bc_symbols.append(p)
+        if p in prop_symbol:
+            return True
+        if not kb.clauses_by_conclusion(p):
+            return False
+        if not inferred[p]:
+            inferred[p] = True
+            if not kb.clauses_by_conclusion(p):
+                agenda.append(p)
+            for c in kb.clauses_by_conclusion(p):
+                if c.op == '==>':
+                    bc_symbols.extend(conjuncts(c.args[0]))
+                    agenda.extend(conjuncts(c.args[0]))
+    return False
+
+
+def get_bc_symbols():
+    bc_symbols_set = set(bc_symbols)
+    return bc_symbols_set

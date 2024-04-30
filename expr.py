@@ -142,3 +142,11 @@ def get_symbols(x: 'Expr') -> set:
         return {x}
     else:
         return {symbol for arg in x.args for symbol in get_symbols(arg)}
+
+
+def is_prop_symbol(s):
+    """A proposition logic symbol is an initial-uppercase string.
+    >>> is_prop_symbol('exe')
+    False
+    """
+    return is_symbol(s)
