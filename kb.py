@@ -1,5 +1,5 @@
 from utils import first
-from entail_engine import tt_entails
+from inference_algorithms import tt_entails
 from cnf import to_cnf, conjuncts, is_definite_clause
 from expr import Expr
 
