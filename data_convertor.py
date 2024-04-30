@@ -18,4 +18,7 @@ def data_convertor():
     p = [s.strip() for s in tell.split(';')]
     p = [s.rstrip() for s in p[:-1]]
     p = [s.replace('=>', '==>') for s in p]
+
+    print(p)
+    print(q)
     return file_name, p, q

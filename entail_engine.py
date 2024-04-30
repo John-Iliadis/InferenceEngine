@@ -121,8 +121,6 @@ def pl_bc_entails(kb, q) -> bool:
     prop_symbol = [s for s in kb.clauses if is_prop_symbol(s.op)]
 
     while agenda:
-        print("agenda: ")
-        print(agenda)
         p = agenda.pop()
         bc_symbols.append(p)
         if p in prop_symbol:
@@ -133,15 +131,10 @@ def pl_bc_entails(kb, q) -> bool:
             inferred[p] = True
             if not kb.clauses_by_conclusion(p):
                 agenda.append(p)
-            print(kb.clauses_by_conclusion(p))
             for c in kb.clauses_by_conclusion(p):
                 if c.op == '==>':
-                    print(conjuncts(c.args[0]))
                     bc_symbols.extend(conjuncts(c.args[0]))
                     agenda.extend(conjuncts(c.args[0]))
-                    print("bc_symbols: ")
-                    print(bc_symbols)
-
     return False
 
 
