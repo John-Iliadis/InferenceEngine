@@ -1,4 +1,4 @@
-"""entail_engine.py: File containing entailment algorithms."""
+"""inference_algorithms.py: File containing entailment algorithms."""
 
 from expr import Expr, is_symbol, get_symbols, is_prop_symbol
 from utils import extend
@@ -87,7 +87,7 @@ def pl_fc_entails(kb, q) -> bool:
     """
     [Figure 7.15]
     Use forward chaining to see if a PropDefiniteKB entails symbol q.
-    >>> pl_fc_entails(horn_clauses_KB, expr('Q'))
+    > pl_fc_entails(horn_clauses_KB, expr('Q'))
     True
     """
     count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
