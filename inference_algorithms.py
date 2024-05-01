@@ -61,7 +61,7 @@ def pl_true(exp: 'Expr', model: dict) -> bool:
     raise ValueError('Illegal operator in logic expression' + str(exp))
 
 
-def pl_fc_entails(kb, query) -> Tuple[bool, list]:
+def pl_fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     """
     [Figure 7.15]
     Use forward chaining to see if a PropDefiniteKB entails symbol q.
@@ -90,7 +90,7 @@ def pl_fc_entails(kb, query) -> Tuple[bool, list]:
     return False, entailed_symbols
 
 
-def pl_bc_entails(kb, query) -> Tuple[bool, list]:
+def pl_bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     inferred = defaultdict(bool)
     agenda = [query]
     prop_symbol = [s for s in kb.clauses if is_symbol(s.op)]
@@ -101,13 +101,13 @@ def pl_bc_entails(kb, query) -> Tuple[bool, list]:
         entailed_symbols.append(p)
         if p in prop_symbol:
             return True, entailed_symbols
-        if not kb.clauses_by_conclusion(p):
+        if not kb.clauses_with_conclusion(p):
             return False, entailed_symbols
         if not inferred[p]:
             inferred[p] = True
-            if not kb.clauses_by_conclusion(p):
+            if not kb.clauses_with_conclusion(p):
                 agenda.append(p)
-            for c in kb.clauses_by_conclusion(p):
+            for c in kb.clauses_with_conclusion(p):
                 if c.op == '==>':
                     entailed_symbols.extend(conjuncts(c.args[0]))
                     agenda.extend(conjuncts(c.args[0]))
