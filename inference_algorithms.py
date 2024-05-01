@@ -1,14 +1,10 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, is_prop_symbol
+from expr import Expr, is_symbol, get_symbols
 from utils import extend
 from typing import Tuple
-from collections import defaultdict
+from collections import defaultdict, deque
 from cnf import conjuncts
-
-fc_symbols = set()
-bc_symbols = []
-symbol_list = set()
 
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
@@ -65,7 +61,7 @@ def pl_true(exp: 'Expr', model: dict) -> bool:
     raise ValueError('Illegal operator in logic expression' + str(exp))
 
 
-def pl_fc_entails(kb, q) -> bool:
+def pl_fc_entails(kb, query) -> Tuple[bool, list]:
     """
     [Figure 7.15]
     Use forward chaining to see if a PropDefiniteKB entails symbol q.
@@ -74,52 +70,44 @@ def pl_fc_entails(kb, q) -> bool:
     """
     count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
     inferred = defaultdict(bool)
-    agenda = [s for s in kb.clauses if is_prop_symbol(s.op)]
-    for item in agenda:
-        fc_symbols.add(item)
+    agenda = deque([s for s in kb.clauses if is_symbol(s.op)])
+    entailed_symbols = []
 
     while agenda:
-        p = agenda.pop()
-        if p == q:
-            return True
-        if not inferred[p]:
-            inferred[p] = True
-            for c in kb.clauses_with_premise(p):
-                count[c] -= 1
-                fc_symbols.add(c.args[1])
-                if count[c] == 0:
-                    agenda.append(c.args[1])
+        proposition = agenda.popleft()
 
-    return False
+        if proposition == query:
+            entailed_symbols.append(proposition)
+            return True, entailed_symbols
+        if not inferred[proposition]:
+            inferred[proposition] = True
+            entailed_symbols.append(proposition)
+            for clause in kb.clauses_with_premise(proposition):
+                count[clause] -= 1
+                if count[clause] == 0:
+                    agenda.append(clause.args[1])
 
-
-def get_fc_symbols():
-    return fc_symbols
+    return False, entailed_symbols
 
 
-def pl_bc_entails(kb, q) -> bool:
+def pl_bc_entails(kb, query) -> Tuple[bool, list]:
     inferred = defaultdict(bool)
-    agenda = [q]
-    prop_symbol = [s for s in kb.clauses if is_prop_symbol(s.op)]
+    agenda = [query]
+    prop_symbol = [s for s in kb.clauses if is_symbol(s.op)]
+    entailed_symbols = []
 
     while agenda:
         p = agenda.pop()
-        bc_symbols.append(p)
+        entailed_symbols.append(p)
         if p in prop_symbol:
-            return True
+            return True, entailed_symbols
         if not kb.clauses_by_conclusion(p):
-            return False
+            return False, entailed_symbols
         if not inferred[p]:
             inferred[p] = True
             if not kb.clauses_by_conclusion(p):
                 agenda.append(p)
             for c in kb.clauses_by_conclusion(p):
                 if c.op == '==>':
-                    bc_symbols.extend(conjuncts(c.args[0]))
+                    entailed_symbols.extend(conjuncts(c.args[0]))
                     agenda.extend(conjuncts(c.args[0]))
-    return False
-
-
-def get_bc_symbols():
-    bc_symbols_set = set(bc_symbols)
-    return bc_symbols_set
