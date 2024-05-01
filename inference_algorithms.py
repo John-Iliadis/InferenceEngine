@@ -11,17 +11,22 @@ bc_symbols = []
 symbol_list = set()
 
 
-def tt_entails(kb: 'Expr', query: 'Expr') -> bool:
+def tt_entails(kb: 'Expr', query: 'Expr'):
     """A truth table enumeration algorithm for deciding propositional entailment."""
+    model_count = [0]  # single element array so I can pass it as a reference
     symbols = list(get_symbols(kb & query))
-    return tt_check_all(kb, query, symbols, {})
+    result = tt_check_all(kb, query, symbols, {}, model_count)
+    return result, model_count[0]
 
 
-def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict) -> bool:
+def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_count: list):
     """Auxiliary routine to implement tt_entails."""
     if not symbols:
+        # 'if' statement ensures that M(kb) is a subset of M(query)
         if pl_true(kb, model):
             result = pl_true(query, model)
+            if result:
+                model_count[0] += 1
             assert result in [True, False]
             return result
         else:
@@ -29,8 +34,8 @@ def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict) -> bool:
     else:
         p = symbols[0]
         rest = symbols[1:]
-        return (tt_check_all(kb, query, rest, extend(model, p, True)) and
-                tt_check_all(kb, query, rest, extend(model, p, False)))
+        return (tt_check_all(kb, query, rest, extend(model, p, True), model_count) and
+                tt_check_all(kb, query, rest, extend(model, p, False), model_count))
 
 
 def pl_true(exp: Union['Expr', bool], model: dict) -> Union[bool, None]:
