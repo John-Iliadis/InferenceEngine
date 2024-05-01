@@ -105,8 +105,6 @@ def pl_bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
             return False, entailed_symbols
         if not inferred[p]:
             inferred[p] = True
-            if not kb.clauses_with_conclusion(p):
-                agenda.append(p)
             for c in kb.clauses_with_conclusion(p):
                 if c.op == '==>':
                     entailed_symbols.extend(conjuncts(c.args[0]))

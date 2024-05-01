@@ -54,8 +54,6 @@ def test_distribute_and_over_or():
 def test_to_conjunctive_normal_form():
     expr1 = expr('~(b || c)')
     expr2 = expr('a || (b & c)')
-    # expr3 = expr('a <=> (b || c)') # todo fix later
 
     assert to_cnf(expr1) == expr('~b & ~c')
     assert to_cnf(expr2) == expr('(b || a) & (c || a)')  # distributivity of || over &
-    # assert to_cnf(expr3) == expr('(~a || b || c) & (~b || a) & (~c || a)')
