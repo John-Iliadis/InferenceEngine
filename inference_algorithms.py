@@ -2,7 +2,7 @@
 
 from expr import Expr, is_symbol, get_symbols, is_prop_symbol
 from utils import extend
-from typing import Union
+from typing import Tuple
 from collections import defaultdict
 from cnf import conjuncts
 
@@ -11,7 +11,7 @@ bc_symbols = []
 symbol_list = set()
 
 
-def tt_entails(kb: 'Expr', query: 'Expr'):
+def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
     """A truth table enumeration algorithm for deciding propositional entailment."""
     model_count = [0]  # single element array so I can pass it as a reference
     symbols = list(get_symbols(kb & query))
@@ -19,18 +19,15 @@ def tt_entails(kb: 'Expr', query: 'Expr'):
     return result, model_count[0]
 
 
-def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_count: list):
+def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_count: list) -> bool:
     """Auxiliary routine to implement tt_entails."""
     if not symbols:
         # 'if' statement ensures that M(kb) is a subset of M(query)
         if pl_true(kb, model):
             result = pl_true(query, model)
-            if result:
-                model_count[0] += 1
-            assert result in [True, False]
+            model_count[0] += 1 if result else 0
             return result
-        else:
-            return True
+        return True
     else:
         p = symbols[0]
         rest = symbols[1:]
@@ -38,52 +35,32 @@ def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_co
                 tt_check_all(kb, query, rest, extend(model, p, False), model_count))
 
 
-def pl_true(exp: Union['Expr', bool], model: dict) -> Union[bool, None]:
+def pl_true(exp: 'Expr', model: dict) -> bool:
     """Returns true if the expression is true in the given model."""
-    if exp in [True, False]:
-        return exp
-
     op = exp.op
     args = exp.args
 
     if is_symbol(op):
-        return model.get(exp)
+        return model.get(exp, False)
     elif op == '~':
-        p = pl_true(args[0], model)
-        return None if p is None else not p
+        return not pl_true(args[0], model)
     elif op == '||':
-        result = False
         for arg in args:
-            p = pl_true(arg, model)
-            if p is True:
+            if pl_true(arg, model):
                 return True
-            elif p is None:
-                result = None
-        return result
+        return False
     elif op == '&':
-        result = True
         for arg in args:
-            p = pl_true(arg, model)
-            if p is False:
+            if pl_true(arg, model) is False:
                 return False
-            if p is None:
-                result = None
-        return result
+        return True
 
     p, q = args
 
     if op == '==>':
         return pl_true(~p | '||' | q, model)
-
-    pt = pl_true(p, model)
-
-    if pt is None:
-        return None
-
-    qt = pl_true(q, model)
-
-    if op == '<=>':
-        return pt == qt
+    elif op == '<=>':
+        return pl_true(p, model) == pl_true(q, model)
 
     raise ValueError('Illegal operator in logic expression' + str(exp))
 
