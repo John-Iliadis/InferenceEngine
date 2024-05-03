@@ -1,6 +1,6 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols
+from expr import Expr, is_symbol, get_symbols, expr
 from utils import extend
 from typing import Tuple
 from collections import defaultdict, deque
@@ -61,51 +61,48 @@ def pl_true(exp: 'Expr', model: dict) -> bool:
     raise ValueError('Illegal operator in logic expression' + str(exp))
 
 
-def pl_fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
-    """
-    [Figure 7.15]
-    Use forward chaining to see if a PropDefiniteKB entails symbol q.
-    > pl_fc_entails(horn_clauses_KB, expr('Q'))
-    True
-    """
+def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
     inferred = defaultdict(bool)
     agenda = deque([s for s in kb.clauses if is_symbol(s.op)])
-    entailed_symbols = []
+    inferred_symbols = []
 
     while agenda:
         proposition = agenda.popleft()
 
         if proposition == query:
-            entailed_symbols.append(proposition)
-            return True, entailed_symbols
+            inferred_symbols.append(proposition)
+            return True, inferred_symbols
         if not inferred[proposition]:
             inferred[proposition] = True
-            entailed_symbols.append(proposition)
+            inferred_symbols.append(proposition)
             for clause in kb.clauses_with_premise(proposition):
                 count[clause] -= 1
                 if count[clause] == 0:
                     agenda.append(clause.args[1])
 
-    return False, entailed_symbols
+    return False, inferred_symbols
 
 
-def pl_bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
-    inferred = defaultdict(bool)
-    agenda = [query]
-    prop_symbol = [s for s in kb.clauses if is_symbol(s.op)]
-    entailed_symbols = []
+def bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
+    symbols = [s for s in kb.clauses if is_symbol(s.op)]
+    inferred_symbols = []  # list of symbols that are entailed by bc
+    expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-computed
 
-    while agenda:
-        p = agenda.pop()
-        entailed_symbols.append(p)
-        if p in prop_symbol:
-            return True, entailed_symbols
-        if not kb.clauses_with_conclusion(p):
-            return False, entailed_symbols
-        if not inferred[p]:
-            inferred[p] = True
-            for c in kb.clauses_with_conclusion(p):
-                if c.op == '==>':
-                    entailed_symbols.extend(conjuncts(c.args[0]))
-                    agenda.extend(conjuncts(c.args[0]))
+    def truth_value(q) -> bool:
+        if q in symbols:
+            inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
+            return True
+        elif not is_symbol(q.op):
+            return truth_value(q.args[0]) and truth_value(q.args[1])
+        else:
+            for clause in kb.clauses_with_conclusion(q):
+                if clause in expr_cache:
+                    return True  # clause is already in the cache, so return True
+                elif truth_value(clause.args[0]):
+                    expr_cache.append(clause)  # add evaluated expr to the cache
+                    inferred_symbols.append(clause.args[1])  # add new inferred symbol
+                    return True
+            return False
+
+    return truth_value(query), inferred_symbols

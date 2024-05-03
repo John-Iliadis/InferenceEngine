@@ -1,5 +1,5 @@
 import sys
-from inference_algorithms import tt_entails, pl_fc_entails, pl_bc_entails
+from inference_algorithms import tt_entails, fc_entails, bc_entails
 from kb import PropDefiniteKB
 from expr import expr, kb2expr
 from utils import file_parser
@@ -14,11 +14,11 @@ def run_inference_algorithm(method_name: str, kb: list, query: str):
     definite_clauses_kb = PropDefiniteKB(kb)
 
     if method_name.lower() == "fc":
-        result, symbols = pl_fc_entails(definite_clauses_kb, query)
+        result, symbols = fc_entails(definite_clauses_kb, query)
         return result, symbols
-    elif method_name.lower() == "bc":
-        result, symbols = pl_bc_entails(definite_clauses_kb, query)
-        return result, symbols
+    # elif method_name.lower() == "bc":
+    #     result, symbols = pl_bc_entails(definite_clauses_kb, query)
+    #     return result, symbols
 
     raise RuntimeError(f"select_inference_algorithm(): Invalid algorithm selected")
 
@@ -43,7 +43,9 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    kb, query = file_parser("data/problem_3.txt")
+   # x: 'Expr' = expr('a&b&c==>d')
+
+    kb, query = file_parser("data/problem_1.txt")
     definite_clauses_kb = PropDefiniteKB(kb)
-    x, e = pl_bc_entails(definite_clauses_kb, expr(query))
-    print(x, e)
+    x, inferred = bc_entails(definite_clauses_kb, expr(query))
+    print(x, inferred)
