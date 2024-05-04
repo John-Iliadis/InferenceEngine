@@ -1,7 +1,7 @@
 from utils import first
-from entail_engine import tt_entails
+from inference_algorithms import tt_entails
 from cnf import to_cnf, conjuncts, is_definite_clause
-from expr import Expr
+from expr import Expr, expr
 
 
 class KB:
@@ -57,6 +57,10 @@ class PropKB(KB):
 
 class PropDefiniteKB(PropKB):
     """A KB of propositional definite clauses."""
+    def __init__(self, kb: list):
+        super().__init__()
+        for clause in kb:
+            self.tell(expr(clause))
 
     def tell(self, sentence):
         """Add a definite clause to this KB."""
@@ -67,11 +71,9 @@ class PropDefiniteKB(PropKB):
         self.clauses.remove(sentence)
 
     def clauses_with_premise(self, p):
-        """Return a list of the clauses in KB that have p in their premise.
-        This could be cached away for O(1) speed, but we'll recompute it."""
+        """Return a list of the clauses in KB that have p in their premise."""
         return [c for c in self.clauses if c.op == '==>' and p in conjuncts(c.args[0])]
 
-    def clauses_by_conclusion(self, p):
-        """Return a list of the clauses in KB that have p in their premise.
-        This could be cached away for O(1) speed, but we'll recompute it."""
+    def clauses_with_conclusion(self, p):
+        """Return a list of the clauses in KB that have p in their conclusion."""
         return [c for c in self.clauses if c.op == '==>' and p in conjuncts(c.args[1])]

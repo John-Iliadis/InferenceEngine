@@ -85,7 +85,6 @@ def kb2expr(kb: List[str]) -> 'Expr':
     kb_expr: str = ''
 
     for sentence in kb:
-        sentence = sentence.replace('=>', '==>')
         kb_expr += f'&({sentence})' if kb_expr else f'({sentence})'
 
     return expr(kb_expr)
@@ -142,11 +141,3 @@ def get_symbols(x: 'Expr') -> set:
         return {x}
     else:
         return {symbol for arg in x.args for symbol in get_symbols(arg)}
-
-
-def is_prop_symbol(s):
-    """A proposition logic symbol is an initial-uppercase string.
-    >>> is_prop_symbol('exe')
-    False
-    """
-    return is_symbol(s)

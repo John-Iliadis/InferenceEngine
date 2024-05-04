@@ -78,9 +78,9 @@ def distribute_and_over_or(s: 'Expr'):
 
 def conjuncts(s):
     """Return a list of the conjuncts in the sentence s.
-    >>> conjuncts(A & B)
+    > conjuncts(A & B)
     [A, B]
-    >>> conjuncts(A | B)
+    > conjuncts(A | B)
     [(A | B)]
     """
     return dissociate('&', [s])
@@ -89,7 +89,7 @@ def conjuncts(s):
 def dissociate(op, args):
     """Given an associative op, return a flattened list result such
     that Expr(op, *result) means the same as Expr(op, *args).
-    >>> dissociate('&', [A & B])
+    > dissociate('&', [A & B])
     [A, B]
     """
     result = []
@@ -109,7 +109,7 @@ def is_definite_clause(s):
     """Returns True for exprs s of the form A & B & ... & C ==> D,
     where all literals are positive. In clause form, this is
     ~A | ~B | ... | ~C | D, where exactly one clause is positive.
-    >>> is_definite_clause(expr('Farmer(Mac)'))
+    > is_definite_clause(expr('Farmer(Mac)'))
     True
     """
     if is_symbol(s.op):
