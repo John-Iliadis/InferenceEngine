@@ -1,10 +1,10 @@
 """utils.py: Contains utility functions."""
 
-from expr import Expr
+from expr import Expr, expr
 from typing import Tuple
 
 
-def file_parser(filename: str) -> Tuple[list, str]:
+def file_parser(filename: str) -> Tuple[list, 'Expr']:
     file = open(filename, 'r')
 
     if file.closed:
@@ -15,7 +15,8 @@ def file_parser(filename: str) -> Tuple[list, str]:
     kb = convert_kb_to_list(kb_str)  # convert kb string to a list
     get_next_non_blank_line(file)  # remove any blank lines and get to ASK
     query = file.readline().strip()  # get query
-    return kb, query
+
+    return kb, expr(query)
 
 
 def convert_kb_to_list(kb_str: str) -> list:
