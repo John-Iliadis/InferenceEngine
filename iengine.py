@@ -1,7 +1,6 @@
 import sys
 from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_entails
-from kb import PropDefiniteKB
-from expr import kb2expr, expr
+from expr import kb2expr, kb2expr_list, expr
 from utils import file_parser
 
 
@@ -17,11 +16,14 @@ def main():
     result_lhs, result_rhs = None, None
 
     if method_name == "tt":
-        result_lhs, result_rhs = tt_entails(kb2expr(kb), query)
+        result_lhs, result_rhs = tt_entails(kb2expr(kb), expr(query))
     elif method_name == "fc":
-        result_lhs, result_rhs = fc_entails(PropDefiniteKB(kb), query)
+        result_lhs, result_rhs = fc_entails(kb2expr_list(kb), expr(query))
     elif method_name == "bc":
-        result_lhs, result_rhs = bc_entails(PropDefiniteKB(kb), query)
+        result_lhs, result_rhs = bc_entails(kb2expr_list(kb), expr(query))
+    elif method_name == "dpll":
+        result_lhs = dpll_entails(kb2expr(kb), expr(query))
+        result_rhs = ''
     else:
         raise RuntimeError("Incorrect command line arguments")
 
@@ -32,7 +34,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    kb, query = file_parser("data/problem_4.txt")
-    print(dpll_entails(kb2expr(kb), query))
-    print(tt_entails(kb2expr(kb), query))
+    main()

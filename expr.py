@@ -1,6 +1,7 @@
 """expr.py: This file contains all classes and functions associated with expressions."""
 
 import collections
+import re
 from typing import List
 
 
@@ -65,8 +66,9 @@ class DefaultKeyDict(collections.defaultdict):
 
 
 def handle_infix_ops(x: str) -> str:
-    for op in ['||', '<=>', '==>',]:
-        x = x.replace(op, f"| '{op}' |")
+    x = re.sub(r'(?<!<)=>', "| '=>' |", x)
+    x = x.replace('<=>', "| '<=>' |")
+    x = x.replace('||', "| '||' |")
     return x
 
 
@@ -78,7 +80,7 @@ def expr(x: str):
 
 def kb2expr(kb: List[str]) -> 'Expr':
     """
-    Turns a kb into an expression.
+    Turns a string list kb into an expression.
     > kb2expr(['magical', 'mythical'])
     (magical & mythical)
     """
@@ -88,6 +90,11 @@ def kb2expr(kb: List[str]) -> 'Expr':
         kb_expr += f'&({sentence})' if kb_expr else f'({sentence})'
 
     return expr(kb_expr)
+
+
+def kb2expr_list(kb: List[str]) -> List['Expr']:
+    """Turns a string list kb into an Expr list."""
+    return [expr(e) for e in kb]
 
 
 def associate(op, args):
@@ -151,7 +158,7 @@ def disjuncts(s: 'Expr') -> list:
 
 
 def is_definite_clause(s: 'Expr'):
-    """Returns True for exprs s of the form A & B & ... & C ==> D,
+    """Returns True for exprs s of the form A & B & ... & C => D,
     where all literals are positive. In clause form, this is
     ~A | ~B | ... | ~C | D, where exactly one clause is positive.
     > is_definite_clause(expr('Farmer(Mac)'))
@@ -159,7 +166,7 @@ def is_definite_clause(s: 'Expr'):
     """
     if is_symbol(s.op):
         return True
-    elif s.op == '==>':
+    elif s.op == '=>':
         antecedent, consequent = s.args
         return is_symbol(consequent.op) and all(is_symbol(arg.op) for arg in conjuncts(antecedent))
     else:
@@ -181,9 +188,9 @@ def get_symbols(x: 'Expr') -> set:
 
 def clauses_with_premise(clauses, p):
     """Return a list of the clauses in KB that have p in their premise."""
-    return [c for c in clauses if c.op == '==>' and p in conjuncts(c.args[0])]
+    return [c for c in clauses if c.op == '=>' and p in conjuncts(c.args[0])]
 
 
 def clauses_with_conclusion(clauses, p):
     """Return a list of the clauses in KB that have p in their conclusion."""
-    return [c for c in clauses if c.op == '==>' and p in conjuncts(c.args[1])]
+    return [c for c in clauses if c.op == '=>' and p in conjuncts(c.args[1])]

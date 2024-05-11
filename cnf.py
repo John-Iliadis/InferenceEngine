@@ -20,7 +20,7 @@ def eliminate_implications(s: 'Expr') -> 'Expr':
     args = list(map(eliminate_implications, s.args))
     a, b = args[0], args[-1]
 
-    if s.op == '==>':
+    if s.op == '=>':
         return ~a | '||' | b
     elif s.op == '<=>':
         return (~a | '||' | b) & (~b | '||' | a)

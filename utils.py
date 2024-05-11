@@ -12,7 +12,7 @@ def file_parser(filename: str) -> Tuple[list, str]:
 
     file.readline()  # reads Tell
     kb_str = file.readline().strip()  # get kb string
-    kb = [x.strip() for x in kb_str.split(';')]  # convert the kb string into sentences
+    kb = [x.strip() for x in kb_str.split(';') if x]  # convert the kb string into sentences
     get_next_non_blank_line(file)  # remove any blank lines and get to ASK
     query = file.readline().strip()  # get query
 

@@ -1,8 +1,8 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, expr
+from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, expr
 from utils import extend, remove_all
-from typing import Tuple, Union
+from typing import Tuple, Union, List
 from collections import defaultdict, deque
 from cnf import to_cnf
 
@@ -65,7 +65,7 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
 
     p, q = args
 
-    if op == '==>':
+    if op == '=>':
         return pl_true(~p | '||' | q, model)
 
     pt = pl_true(p, model)
@@ -87,10 +87,11 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
 # ______________________________________________________________________________
 # FC-Entails
 
-def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
-    count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
+def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
+    assert all(is_definite_clause(e) for e in kb), "fc_entails: an expression in the kb is not in definite form"
+    count = {c: len(conjuncts(c.args[0])) for c in kb if c.op == '=>'}
     inferred = defaultdict(bool)
-    agenda = deque([s for s in kb.clauses if is_symbol(s.op)])
+    agenda = deque([s for s in kb if is_symbol(s.op)])
     inferred_symbols = []
 
     while agenda:
@@ -102,7 +103,7 @@ def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
         if not inferred[proposition]:
             inferred[proposition] = True
             inferred_symbols.append(proposition)
-            for clause in kb.clauses_with_premise(proposition):
+            for clause in clauses_with_premise(kb, proposition):
                 count[clause] -= 1
                 if count[clause] == 0:
                     agenda.append(clause.args[1])
@@ -113,8 +114,9 @@ def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
 # ______________________________________________________________________________
 # BC-Entails
 
-def bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
-    symbols = [s for s in kb.clauses if is_symbol(s.op)]
+def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
+    assert all(is_definite_clause(e) for e in kb), "bc_entails: an expression in the kb is not in definite form"
+    symbols = [s for s in kb if is_symbol(s.op)]
     inferred_symbols = []  # list of symbols that are entailed by bc
     expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-calculated
 
@@ -126,7 +128,7 @@ def bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
         elif not is_symbol(q.op):
             return truth_value(q.args[0]) and truth_value(q.args[1])
         else:
-            for clause in kb.clauses_with_conclusion(q):
+            for clause in clauses_with_conclusion(kb, q):
                 if clause in expr_cache:
                     return True  # clause is already in the cache, so return True
                 elif truth_value(clause.args[0]):
@@ -178,11 +180,6 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
 
 
 def find_pure_symbol(symbols: list, clauses: list):
-    """Find a symbol and its value if it appears only as a positive literal
-    (or only as a negative) in clauses.
-    > find_pure_symbol([A, B, C], [A||~B,~B||~C,C||A])
-    (A, True)
-    """
     for symbol in symbols:
         found_pos, found_neg = False, False
         for clause in clauses:
@@ -197,11 +194,6 @@ def find_pure_symbol(symbols: list, clauses: list):
 
 
 def find_unit_clause(clauses: list, model: dict):
-    """Find a forced assignment if possible from a clause with only 1
-    variable not bound in the model.
-    > find_unit_clause([A|B|C, B|~C, ~A|~B], {A:True})
-    (B, False)
-    """
     for clause in clauses:
         p, value = unit_clause_assign(clause, model)
         if p is not None:
@@ -210,15 +202,6 @@ def find_unit_clause(clauses: list, model: dict):
 
 
 def unit_clause_assign(clause: 'Expr', model: dict):
-    """Return a variable/value pair that makes the clause true in
-    the model, if possible.
-    > unit_clause_assign(A|B|C, {A:True})
-    (None, None)
-    > unit_clause_assign(B|~C, {A:True})
-    (None, None)
-    > unit_clause_assign(~A|~B, {A:True})
-    (B, False)
-    """
     p, value = None, None
 
     for literal in disjuncts(clause):
