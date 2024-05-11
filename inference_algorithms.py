@@ -1,11 +1,14 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, expr
-from utils import extend
-from typing import Tuple
+from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, expr
+from utils import extend, remove_all
+from typing import Tuple, Union
 from collections import defaultdict, deque
-from cnf import conjuncts
+from cnf import to_cnf
 
+
+# ______________________________________________________________________________
+# TT-Entails
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
     """A truth table enumeration algorithm for deciding propositional entailment."""
@@ -22,7 +25,7 @@ def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_co
         if pl_true(kb, model):
             result = pl_true(query, model)
             model_count[0] += 1 if result else 0
-            return result
+            return result if result is not None else False
         return True
     else:
         p = symbols[0]
@@ -31,35 +34,58 @@ def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_co
                 tt_check_all(kb, query, rest, extend(model, p, False), model_count))
 
 
-def pl_true(exp: 'Expr', model: dict) -> bool:
+def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
     """Returns true if the expression is true in the given model."""
     op = exp.op
     args = exp.args
 
     if is_symbol(op):
-        return model.get(exp, False)
+        return model.get(exp)
     elif op == '~':
-        return not pl_true(args[0], model)
+        p = pl_true(args[0], model)
+        return None if p is None else not p
     elif op == '||':
+        result = False
         for arg in args:
-            if pl_true(arg, model):
+            p = pl_true(arg, model)
+            if p is True:
                 return True
-        return False
+            elif p is None:
+                result = None
+        return result
     elif op == '&':
+        result = True
         for arg in args:
-            if pl_true(arg, model) is False:
+            p = pl_true(arg, model)
+            if p is False:
                 return False
-        return True
+            elif p is None:
+                result = None
+        return result
 
     p, q = args
 
     if op == '==>':
         return pl_true(~p | '||' | q, model)
-    elif op == '<=>':
-        return pl_true(p, model) == pl_true(q, model)
+
+    pt = pl_true(p, model)
+
+    if pt is None:
+        return None
+
+    qt = pl_true(q, model)
+
+    if qt is None:
+        return None
+
+    if op == '<=>':
+        return pt == qt
 
     raise ValueError('Illegal operator in logic expression' + str(exp))
 
+
+# ______________________________________________________________________________
+# FC-Entails
 
 def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     count = {c: len(conjuncts(c.args[0])) for c in kb.clauses if c.op == '==>'}
@@ -84,11 +110,15 @@ def fc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     return False, inferred_symbols
 
 
+# ______________________________________________________________________________
+# BC-Entails
+
 def bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
     symbols = [s for s in kb.clauses if is_symbol(s.op)]
     inferred_symbols = []  # list of symbols that are entailed by bc
-    expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-computed
+    expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-calculated
 
+    # recursive impl of bc
     def truth_value(q) -> bool:
         if q in symbols:
             inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
@@ -106,3 +136,104 @@ def bc_entails(kb, query: 'Expr') -> Tuple[bool, list]:
             return False
 
     return truth_value(query), inferred_symbols
+
+
+# ______________________________________________________________________________
+# DPLL-Entails
+
+def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
+    _sentence = kb & ~query  # kb |= query if (kb & ~query) is unsatisfiable
+    _symbols = list(get_symbols(_sentence))
+    clauses = conjuncts(to_cnf(_sentence))
+
+    def dpll_impl(symbols: list, model: dict):
+        unknown_clauses = []
+
+        for clause in clauses:
+            result = pl_true(clause, model)
+            if result is False:
+                return False
+            elif result is None:
+                unknown_clauses.append(clause)
+
+        if not unknown_clauses:
+            return True
+
+        p, value = find_pure_symbol(symbols, clauses)
+
+        if p is not None:
+            return dpll_impl(remove_all(p, symbols), extend(model, p, value))
+
+        p, value = find_unit_clause(clauses, model)
+
+        if p is not None:
+            return dpll_impl(remove_all(p, symbols), extend(model, p, value))
+
+        p = symbols[0]
+        rest = symbols[1:]
+
+        return dpll_impl(rest, extend(model, p, True)) or dpll_impl(rest, extend(model, p, False))
+
+    return dpll_impl(_symbols, {})
+
+
+def find_pure_symbol(symbols: list, clauses: list):
+    """Find a symbol and its value if it appears only as a positive literal
+    (or only as a negative) in clauses.
+    > find_pure_symbol([A, B, C], [A|~B,~B|~C,C|A])
+    (A, True)
+    """
+    for symbol in symbols:
+        found_pos, found_neg = False, False
+        for clause in clauses:
+            if not found_pos and symbol in disjuncts(clause):
+                found_pos = True
+            if not found_neg and ~symbol in disjuncts(clause):
+                found_neg = True
+        if found_pos != found_neg:
+            return symbol, found_pos
+    return None, None
+
+
+def find_unit_clause(clauses: list, model: dict):
+    """Find a forced assignment if possible from a clause with only 1
+    variable not bound in the model.
+    > find_unit_clause([A|B|C, B|~C, ~A|~B], {A:True})
+    (B, False)
+    """
+    for clause in clauses:
+        p, value = unit_clause_assign(clause, model)
+        if p is not None:
+            return p, value
+        return None, None
+
+
+def unit_clause_assign(clause: 'Expr', model: dict):
+    """Return a variable/value pair that makes clause true in
+    the model, if possible.
+    > unit_clause_assign(A|B|C, {A:True})
+    (None, None)
+    > unit_clause_assign(B|~C, {A:True})
+    (None, None)
+    > unit_clause_assign(~A|~B, {A:True})
+    (B, False)
+    """
+    p, value = None, None
+
+    for literal in disjuncts(clause):
+        symbol, is_positive = inspect_literal(literal)
+        if symbol in model:
+            if model[symbol] == is_positive:
+                return None, None  # clause already true
+            elif p is not None:
+                return None, None  # more than 1 unbound variable
+            else:
+                p, value = symbol, is_positive
+    return p, value
+
+
+def inspect_literal(literal: 'Expr') -> Tuple['Expr', bool]:
+    """Returns the symbol of the literal and the value that makes the literal true."""
+    if literal.op == '~':
+        return literal.args[0], False
+    return literal, True

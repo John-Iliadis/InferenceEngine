@@ -1,7 +1,7 @@
 import sys
-from inference_algorithms import tt_entails, fc_entails, bc_entails
+from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_satisfiable
 from kb import PropDefiniteKB
-from expr import kb2expr
+from expr import kb2expr, expr
 from utils import file_parser
 
 
@@ -32,4 +32,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    kb, query = file_parser("data/problem_2.txt")
+

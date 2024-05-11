@@ -130,6 +130,42 @@ def dissociate(op, args) -> list:
     return result
 
 
+def conjuncts(s: 'Expr') -> list:
+    """Return a list of the conjuncts in the sentence s.
+    > conjuncts(A & B & C)
+    [A, B, C]
+    > conjuncts(A | B)
+    [(A | B)]
+    """
+    return dissociate('&', [s])
+
+
+def disjuncts(s):
+    """Return a list of the disjuncts in the sentence s.
+    > disjuncts(A | B)
+    [A, B]
+    > disjuncts(A & B)
+    [(A & B)]
+    """
+    return dissociate('|', [s])
+
+
+def is_definite_clause(s: 'Expr'):
+    """Returns True for exprs s of the form A & B & ... & C ==> D,
+    where all literals are positive. In clause form, this is
+    ~A | ~B | ... | ~C | D, where exactly one clause is positive.
+    > is_definite_clause(expr('Farmer(Mac)'))
+    True
+    """
+    if is_symbol(s.op):
+        return True
+    elif s.op == '==>':
+        antecedent, consequent = s.args
+        return is_symbol(consequent.op) and all(is_symbol(arg.op) for arg in conjuncts(antecedent))
+    else:
+        return False
+
+
 def is_symbol(s: str) -> bool:
     """Returns true if the first character of s is a letter."""
     return s[:1].isalpha()

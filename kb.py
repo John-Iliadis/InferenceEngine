@@ -1,7 +1,7 @@
 from utils import first
 from inference_algorithms import tt_entails
-from cnf import to_cnf, conjuncts, is_definite_clause
-from expr import Expr, expr
+from cnf import to_cnf
+from expr import Expr, expr, conjuncts, is_definite_clause
 
 
 class KB:
@@ -26,6 +26,7 @@ class KB:
         raise NotImplementedError
 
 
+# todo: remove if not needed
 class PropKB(KB):
     """A KB for propositional logic. Inefficient, with no indexing."""
 

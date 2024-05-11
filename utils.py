@@ -49,3 +49,8 @@ def first(iterable, default=None):
 def extend(s: dict, var: 'Expr', val: bool) -> dict:
     """Copy dict s and extend it by setting var to val; return copy."""
     return {**s, var: val}
+
+
+def remove_all(value, array: list) -> list:
+    """Removes all occurrences of 'value' from the given array."""
+    return [x for x in array if x != value]
