@@ -159,7 +159,7 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
         if not unknown_clauses:
             return True
 
-        p, value = find_pure_symbol(symbols, clauses)
+        p, value = find_pure_symbol(symbols, unknown_clauses)
 
         if p is not None:
             return dpll_impl(remove_all(p, symbols), extend(model, p, value))
@@ -174,23 +174,24 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
 
         return dpll_impl(rest, extend(model, p, True)) or dpll_impl(rest, extend(model, p, False))
 
-    return dpll_impl(_symbols, {})
+    return not dpll_impl(_symbols, {})  # if all models are false, then the query is entailed by kb
 
 
 def find_pure_symbol(symbols: list, clauses: list):
     """Find a symbol and its value if it appears only as a positive literal
     (or only as a negative) in clauses.
-    > find_pure_symbol([A, B, C], [A|~B,~B|~C,C|A])
+    > find_pure_symbol([A, B, C], [A||~B,~B||~C,C||A])
     (A, True)
     """
     for symbol in symbols:
         found_pos, found_neg = False, False
         for clause in clauses:
-            if not found_pos and symbol in disjuncts(clause):
-                found_pos = True
-            if not found_neg and ~symbol in disjuncts(clause):
-                found_neg = True
-        if found_pos != found_neg:
+            disjuncts_list = disjuncts(clause)
+            if not found_pos and symbol in disjuncts_list:
+                found_pos = True  # found a clause where the symbol is true
+            if not found_neg and ~symbol in disjuncts_list:
+                found_neg = True  # found a clause where the symbol is false
+        if found_pos != found_neg:  # if the symbol is true/false in all clauses, then return it
             return symbol, found_pos
     return None, None
 
@@ -205,11 +206,11 @@ def find_unit_clause(clauses: list, model: dict):
         p, value = unit_clause_assign(clause, model)
         if p is not None:
             return p, value
-        return None, None
+    return None, None
 
 
 def unit_clause_assign(clause: 'Expr', model: dict):
-    """Return a variable/value pair that makes clause true in
+    """Return a variable/value pair that makes the clause true in
     the model, if possible.
     > unit_clause_assign(A|B|C, {A:True})
     (None, None)
@@ -225,10 +226,10 @@ def unit_clause_assign(clause: 'Expr', model: dict):
         if symbol in model:
             if model[symbol] == is_positive:
                 return None, None  # clause already true
-            elif p is not None:
-                return None, None  # more than 1 unbound variable
-            else:
-                p, value = symbol, is_positive
+        elif p is not None:
+            return None, None  # more than 1 unbound variable
+        else:
+            p, value = symbol, is_positive
     return p, value
 
 

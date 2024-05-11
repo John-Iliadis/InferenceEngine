@@ -1,6 +1,6 @@
 """utils.py: Contains utility functions."""
 
-from expr import Expr, expr
+from expr import Expr, expr, handle_infix_ops
 from typing import Tuple
 
 
@@ -19,6 +19,7 @@ def file_parser(filename: str) -> Tuple[list, 'Expr']:
     return kb, expr(query)
 
 
+# todo: fix this
 def convert_kb_to_list(kb_str: str) -> list:
     """Converts a kb string to a list of sentences."""
     kb = []

@@ -140,14 +140,14 @@ def conjuncts(s: 'Expr') -> list:
     return dissociate('&', [s])
 
 
-def disjuncts(s):
+def disjuncts(s: 'Expr') -> list:
     """Return a list of the disjuncts in the sentence s.
     > disjuncts(A | B)
     [A, B]
     > disjuncts(A & B)
     [(A & B)]
     """
-    return dissociate('|', [s])
+    return dissociate('||', [s])
 
 
 def is_definite_clause(s: 'Expr'):

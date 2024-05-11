@@ -1,5 +1,5 @@
 import sys
-from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_satisfiable
+from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_entails
 from kb import PropDefiniteKB
 from expr import kb2expr, expr
 from utils import file_parser
@@ -33,5 +33,6 @@ def main():
 
 if __name__ == '__main__':
     # main()
-    kb, query = file_parser("data/problem_2.txt")
-
+    kb, query = file_parser("data/problem_4.txt")
+    print(dpll_entails(kb2expr(kb), query))
+    print(tt_entails(kb2expr(kb), query))

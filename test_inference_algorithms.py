@@ -1,7 +1,8 @@
 """test_inference_algorithms.py: Tests entailment algorithms."""
 
-from inference_algorithms import pl_true, tt_entails
-from expr import Expr, expr
+from inference_algorithms import pl_true, tt_entails, find_pure_symbol
+from expr import Expr, expr, disjuncts
+from cnf import to_cnf
 
 
 def test_pl_true():
