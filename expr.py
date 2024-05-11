@@ -177,3 +177,13 @@ def get_symbols(x: 'Expr') -> set:
         return {x}
     else:
         return {symbol for arg in x.args for symbol in get_symbols(arg)}
+
+
+def clauses_with_premise(clauses, p):
+    """Return a list of the clauses in KB that have p in their premise."""
+    return [c for c in clauses if c.op == '==>' and p in conjuncts(c.args[0])]
+
+
+def clauses_with_conclusion(clauses, p):
+    """Return a list of the clauses in KB that have p in their conclusion."""
+    return [c for c in clauses if c.op == '==>' and p in conjuncts(c.args[1])]
