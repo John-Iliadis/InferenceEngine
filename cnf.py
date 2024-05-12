@@ -4,7 +4,7 @@ from expr import Expr, is_symbol, associate
 from utils import first
 
 
-def to_cnf(s: 'Expr'):
+def to_cnf(s: 'Expr') -> 'Expr':
     """Converts a propositional logical sentence to conjunctive normal form."""
     s = eliminate_implications(s)
     s = move_not_inwards(s)
@@ -20,7 +20,7 @@ def eliminate_implications(s: 'Expr') -> 'Expr':
     args = list(map(eliminate_implications, s.args))
     a, b = args[0], args[-1]
 
-    if s.op == '==>':
+    if s.op == '=>':
         return ~a | '||' | b
     elif s.op == '<=>':
         return (~a | '||' | b) & (~b | '||' | a)
@@ -74,48 +74,3 @@ def distribute_and_over_or(s: 'Expr'):
         return associate('&', list(map(distribute_and_over_or, s.args)))
     else:
         return s
-
-
-def conjuncts(s):
-    """Return a list of the conjuncts in the sentence s.
-    > conjuncts(A & B)
-    [A, B]
-    > conjuncts(A | B)
-    [(A | B)]
-    """
-    return dissociate('&', [s])
-
-
-def dissociate(op, args):
-    """Given an associative op, return a flattened list result such
-    that Expr(op, *result) means the same as Expr(op, *args).
-    > dissociate('&', [A & B])
-    [A, B]
-    """
-    result = []
-
-    def collect(subargs):
-        for arg in subargs:
-            if arg.op == op:
-                collect(arg.args)
-            else:
-                result.append(arg)
-
-    collect(args)
-    return result
-
-
-def is_definite_clause(s):
-    """Returns True for exprs s of the form A & B & ... & C ==> D,
-    where all literals are positive. In clause form, this is
-    ~A | ~B | ... | ~C | D, where exactly one clause is positive.
-    > is_definite_clause(expr('Farmer(Mac)'))
-    True
-    """
-    if is_symbol(s.op):
-        return True
-    elif s.op == '==>':
-        antecedent, consequent = s.args
-        return is_symbol(consequent.op) and all(is_symbol(arg.op) for arg in conjuncts(antecedent))
-    else:
-        return False
