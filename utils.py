@@ -12,7 +12,8 @@ def file_parser(filename: str) -> Tuple[list, str]:
 
     file.readline()  # reads Tell
     kb_str = file.readline().strip()  # get kb string
-    kb = [x.strip() for x in kb_str.split(';') if x]  # convert the kb string into sentences
+    # convert the kb string into sentences
+    kb = [x.strip() for x in kb_str.split(';') if x]
     get_next_non_blank_line(file)  # remove any blank lines and get to ASK
     query = file.readline().strip()  # get query
 
@@ -42,3 +43,8 @@ def extend(s: dict, var: 'Expr', val: bool) -> dict:
 def remove_all(value, array: list) -> list:
     """Removes all occurrences of 'value' from the given array."""
     return [x for x in array if x != value]
+
+
+def unique(seq):
+    """Remove duplicate elements from seq. Assumes hashable elements."""
+    return list(set(seq))

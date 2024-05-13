@@ -1,5 +1,5 @@
 import sys
-from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_entails
+from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_entails, pl_resolution_entails
 from expr import kb2expr, kb2expr_list, expr
 from utils import file_parser
 
@@ -24,11 +24,15 @@ def main():
     elif method_name == "dpll":
         result_lhs = dpll_entails(kb2expr(kb), expr(query))
         result_rhs = ''
+    elif method_name == "pl":
+        result_lhs = pl_resolution_entails(kb2expr(kb), expr(query))
+        result_rhs = ''
     else:
         raise RuntimeError("Incorrect command line arguments")
 
     if result_lhs == True:
-        print("Yes: " + (str(result_rhs) if not isinstance(result_rhs, list) else ", ".join([x.op for x in result_rhs])))
+        print("Yes: " + (str(result_rhs) if not isinstance(result_rhs,
+              list) else ", ".join([x.op for x in result_rhs])))
     else:
         print('No')
 
