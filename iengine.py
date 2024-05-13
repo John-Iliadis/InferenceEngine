@@ -25,7 +25,7 @@ def main():
         result_lhs = dpll_entails(kb2expr(kb), expr(query))
         result_rhs = ''
     elif method_name == "pl":
-        result_lhs = pl_resolution_entails(kb2expr(kb), expr(query))
+        result_lhs = pl_resolution_entails(kb2expr_list(kb), expr(query))
         result_rhs = ''
     else:
         raise RuntimeError("Incorrect command line arguments")

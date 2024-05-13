@@ -41,8 +41,15 @@ def extend(s: dict, var: 'Expr', val: bool) -> dict:
 
 
 def remove_all(value, array: list) -> list:
-    """Removes all occurrences of 'value' from the given array."""
-    return [x for x in array if x != value]
+    """Return a copy of seq (or string) with all occurrences of item removed."""
+    if isinstance(array, str):
+        return array.replace(value, '')
+    elif isinstance(array, set):
+        rest = array.copy()
+        rest.remove(value)
+        return rest
+    else:
+        return [x for x in array if x != value]
 
 
 def unique(seq):

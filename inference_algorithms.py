@@ -1,6 +1,6 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, expr, associate
+from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, associate
 from utils import extend, remove_all, unique
 from typing import Tuple, Union, List
 from collections import defaultdict, deque
@@ -232,14 +232,14 @@ def inspect_literal(literal: 'Expr') -> Tuple['Expr', bool]:
 # pl_resolution_entails
 
 
-def pl_resolution_entails(kb, alpha):
+def pl_resolution_entails(kb: List['Expr'], query: 'Expr') -> bool:
     """
     [Figure 7.12]
     Propositional-logic resolution: say if alpha follows from KB.
     >>> pl_resolution_entails(horn_clauses_KB, A)
     True
     """
-    clauses = kb.clauses + conjuncts(to_cnf(~alpha))
+    clauses = kb + conjuncts(to_cnf(~query))
     new = set()
     while True:
         n = len(clauses)
@@ -257,12 +257,12 @@ def pl_resolution_entails(kb, alpha):
                 clauses.append(c)
 
 
-def pl_resolve(ci, cj):
+def pl_resolve(ci: 'Expr', cj: 'Expr') -> List['Expr']:
     """Return all clauses that can be obtained by resolving clauses ci and cj."""
     clauses = []
     for di in disjuncts(ci):
         for dj in disjuncts(cj):
             if di == ~dj or ~di == dj:
-                clauses.append(associate('|', unique(remove_all(
+                clauses.append(associate('||', unique(remove_all(
                     di, disjuncts(ci)) + remove_all(dj, disjuncts(cj)))))
     return clauses
