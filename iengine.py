@@ -30,9 +30,11 @@ def main():
     else:
         raise RuntimeError("Incorrect command line arguments")
 
-    if result_lhs == True:
-        print("Yes: " + (str(result_rhs) if not isinstance(result_rhs,
-              list) else ", ".join([x.op for x in result_rhs])))
+
+    if result_lhs == True and result_rhs:
+        print("Yes: " + (str(result_rhs) if not isinstance(result_rhs, list) else ", ".join([x.op for x in result_rhs])))
+    elif result_lhs == True:
+        print("Yes")
     else:
         print('No')
 
