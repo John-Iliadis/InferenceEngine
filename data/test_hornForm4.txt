@@ -1,4 +1,4 @@
 TELL
 (B & F)=>E; (A & E & F)=>G;(B & C)=>F;(A & B)=>D;(E & F)=>H;(H & I)=>J;A;B;C;
 ASK
-J
+E

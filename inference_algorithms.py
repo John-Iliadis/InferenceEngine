@@ -1,7 +1,7 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, expr
-from utils import extend, remove_all
+from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, associate
+from utils import extend, remove_all, unique
 from typing import Tuple, Union, List
 from collections import defaultdict, deque
 from cnf import to_cnf
@@ -88,7 +88,8 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
 # FC-Entails
 
 def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
-    assert all(is_definite_clause(e) for e in kb), "fc_entails: an expression in the kb is not in definite form"
+    assert all(is_definite_clause(e)
+               for e in kb), "fc_entails: an expression in the kb is not in definite form"
     count = {c: len(conjuncts(c.args[0])) for c in kb if c.op == '=>'}
     inferred = defaultdict(bool)
     agenda = deque([s for s in kb if is_symbol(s.op)])
@@ -115,7 +116,8 @@ def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
 # BC-Entails
 
 def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
-    assert all(is_definite_clause(e) for e in kb), "bc_entails: an expression in the kb is not in definite form"
+    assert all(is_definite_clause(e)
+               for e in kb), "bc_entails: an expression in the kb is not in definite form"
     symbols = [s for s in kb if is_symbol(s.op)]
     inferred_symbols = []  # list of symbols that are entailed by bc
     expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-calculated
@@ -123,7 +125,8 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
     # recursive impl of bc
     def truth_value(q) -> bool:
         if q in symbols:
-            inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
+            # store symbol if it's not already entailed
+            inferred_symbols.append(q) if q not in inferred_symbols else 0
             return True
         elif not is_symbol(q.op):
             return truth_value(q.args[0]) and truth_value(q.args[1])
@@ -132,8 +135,10 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
                 if clause in expr_cache:
                     return True  # clause is already in the cache, so return True
                 elif truth_value(clause.args[0]):
-                    expr_cache.append(clause)  # add evaluated expr to the cache
-                    inferred_symbols.append(clause.args[1])  # add new inferred symbol
+                    # add evaluated expr to the cache
+                    expr_cache.append(clause)
+                    # add new inferred symbol
+                    inferred_symbols.append(clause.args[1])
                     return True
             return False
 
@@ -176,7 +181,8 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
 
         return dpll_impl(rest, extend(model, p, True)) or dpll_impl(rest, extend(model, p, False))
 
-    return not dpll_impl(_symbols, {})  # if all models are false, then the query is entailed by kb
+    # if all models are false, then the query is entailed by kb
+    return not dpll_impl(_symbols, {})
 
 
 def find_pure_symbol(symbols: list, clauses: list):
@@ -221,3 +227,42 @@ def inspect_literal(literal: 'Expr') -> Tuple['Expr', bool]:
     if literal.op == '~':
         return literal.args[0], False
     return literal, True
+
+# ______________________________________________________________________________
+# pl_resolution_entails
+
+
+def pl_resolution_entails(kb: List['Expr'], query: 'Expr') -> bool:
+    """
+    [Figure 7.12]
+    Propositional-logic resolution: say if alpha follows from KB.
+    >>> pl_resolution_entails(horn_clauses_KB, A)
+    True
+    """
+    clauses = kb + conjuncts(to_cnf(~query))
+    new = set()
+    while True:
+        n = len(clauses)
+        pairs = [(clauses[i], clauses[j])
+                 for i in range(n) for j in range(i + 1, n)]
+        for (ci, cj) in pairs:
+            resolvents = pl_resolve(ci, cj)
+            if False in resolvents:
+                return True
+            new = new.union(set(resolvents))
+        if new.issubset(set(clauses)):
+            return False
+        for c in new:
+            if c not in clauses:
+                clauses.append(c)
+
+
+def pl_resolve(ci: 'Expr', cj: 'Expr') -> List['Expr']:
+    """Return all clauses that can be obtained by resolving clauses ci and cj."""
+    clauses = []
+    for di in disjuncts(ci):
+        for dj in disjuncts(cj):
+            if di == ~dj or ~di == dj:
+                clauses.append(associate('||', unique(remove_all(
+                    di, disjuncts(ci)) + remove_all(dj, disjuncts(cj)))))
+    return clauses
