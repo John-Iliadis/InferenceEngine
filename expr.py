@@ -97,7 +97,7 @@ def kb2expr_list(kb: List[str]) -> List['Expr']:
     return [expr(e) for e in kb]
 
 
-def associate(op, args):
+def associate(op: str, args):
     """Given an associative op, return an expression with the same
     meaning as Expr(op, *args), but flattened -- that is, with nested
     instances of the same op promoted to the top level.
@@ -106,13 +106,10 @@ def associate(op, args):
     > associate('|', [A|(B|(C|(A&B)))])
     (A | B | C | (A & B))
     """
-    _op_identity = {'&': True, '||': False}
-
     args = dissociate(op, args)
 
     if len(args) == 0:
         assert False
-        # return _op_identity[op]
     elif len(args) == 1:
         return args[0]
     else:
@@ -158,7 +155,7 @@ def disjuncts(s: 'Expr') -> list:
 
 
 def is_definite_clause(s: 'Expr'):
-    """Returns True for exprs s of the form A & B & ... & C => D,
+    """Returns True for expr s of the form A & B & ... & C => D,
     where all literals are positive. In clause form, this is
     ~A | ~B | ... | ~C | D, where exactly one clause is positive.
     > is_definite_clause(expr('Farmer(Mac)'))

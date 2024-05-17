@@ -48,7 +48,7 @@ def move_not_inwards(s):
         return Expr(s.op, *list(map(move_not_inwards, s.args)))
 
 
-def distribute_and_over_or(s: 'Expr'):
+def distribute_and_over_or(s: 'Expr') -> 'Expr':
     """Given a sentence s consisting of conjunctions and disjunctions
     of literals, returns an equivalent sentence in CNF."""
     if s.op == '||':
@@ -59,7 +59,6 @@ def distribute_and_over_or(s: 'Expr'):
             return distribute_and_over_or(s.args[0])
         elif len(s.args) == 0:
             assert False
-            # return False  # todo: check why this returns false
 
         conj = first(arg for arg in s.args if arg.op == '&')
 
