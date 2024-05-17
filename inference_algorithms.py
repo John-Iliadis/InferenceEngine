@@ -2,7 +2,7 @@
 
 from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, associate
 from utils import extend, remove_all, unique
-from typing import Tuple, Union, List
+from typing import Tuple, Union, List, Any
 from collections import defaultdict, deque
 from cnf import to_cnf
 
@@ -11,7 +11,7 @@ from cnf import to_cnf
 # TT-Entails
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
-    """A truth table enumeration algorithm for deciding propositional entailment."""
+    """Truth table entails checks if kb |= query by checking that kb => query is valid."""
     model_count = [0]  # single element array so I can pass it as a reference
     symbols = list(get_symbols(kb & query))
     result = tt_check_all(kb, query, symbols, {}, model_count)
@@ -19,14 +19,13 @@ def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
 
 
 def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_count: list) -> bool:
-    """Auxiliary routine to implement tt_entails."""
     if not symbols:
-        # 'if' statement ensures that M(kb) is a subset of M(query)
+        # check if kb => query is true
         if pl_true(kb, model):
             result = pl_true(query, model)
             model_count[0] += 1 if result else 0
             return result if result is not None else False
-        return True
+        return True  # if kb is false in that model, then the implication statement is true
     else:
         p = symbols[0]
         rest = symbols[1:]
@@ -40,11 +39,14 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
     args = exp.args
 
     if is_symbol(op):
+        # return boolean value of the given symbol, if it exists. Return none otherwise.
         return model.get(exp)
     elif op == '~':
+        # return the negation of the expression whose operator is '~'
         p = pl_true(args[0], model)
         return None if p is None else not p
     elif op == '||':
+        # if any expression is true in the disjunction, return true
         result = False
         for arg in args:
             p = pl_true(arg, model)
@@ -54,6 +56,7 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
                 result = None
         return result
     elif op == '&':
+        # if any expression is false in the conjunction, return false
         result = True
         for arg in args:
             p = pl_true(arg, model)
@@ -66,6 +69,7 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
     p, q = args
 
     if op == '=>':
+        # apply implication elimination
         return pl_true(~p | '||' | q, model)
 
     pt = pl_true(p, model)
@@ -79,6 +83,7 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
         return None
 
     if op == '<=>':
+        # return true if both lhs and rhs expressions must have the same value
         return pt == qt
 
     raise ValueError('Illegal operator in logic expression' + str(exp))
@@ -88,8 +93,7 @@ def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
 # FC-Entails
 
 def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
-    assert all(is_definite_clause(e)
-               for e in kb), "fc_entails: an expression in the kb is not in definite form"
+    assert all(is_definite_clause(e) for e in kb), "fc_entails: an expression in the kb is not in definite form"
     count = {c: len(conjuncts(c.args[0])) for c in kb if c.op == '=>'}
     inferred = defaultdict(bool)
     agenda = deque([s for s in kb if is_symbol(s.op)])
@@ -116,17 +120,15 @@ def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
 # BC-Entails
 
 def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
-    assert all(is_definite_clause(e)
-               for e in kb), "bc_entails: an expression in the kb is not in definite form"
+    assert all(is_definite_clause(e) for e in kb), "bc_entails: an expression in the kb is not in definite form"
     symbols = [s for s in kb if is_symbol(s.op)]
     inferred_symbols = []  # list of symbols that are entailed by bc
     expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-calculated
 
-    # recursive impl of bc
+    # recursive implementation of bc
     def truth_value(q) -> bool:
         if q in symbols:
-            # store symbol if it's not already entailed
-            inferred_symbols.append(q) if q not in inferred_symbols else 0
+            inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
             return True
         elif not is_symbol(q.op):
             return truth_value(q.args[0]) and truth_value(q.args[1])
@@ -135,10 +137,8 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
                 if clause in expr_cache:
                     return True  # clause is already in the cache, so return True
                 elif truth_value(clause.args[0]):
-                    # add evaluated expr to the cache
-                    expr_cache.append(clause)
-                    # add new inferred symbol
-                    inferred_symbols.append(clause.args[1])
+                    expr_cache.append(clause)  # add evaluated expr to the cache
+                    inferred_symbols.append(clause.args[1])  # add new inferred symbol
                     return True
             return False
 
@@ -148,7 +148,7 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
 # ______________________________________________________________________________
 # DPLL-Entails
 
-def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
+def dpll_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, Any]:
     _sentence = kb & ~query  # kb |= query if (kb & ~query) is unsatisfiable
     _symbols = list(get_symbols(_sentence))
     clauses = conjuncts(to_cnf(_sentence))
@@ -159,12 +159,12 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
         for clause in clauses:
             result = pl_true(clause, model)
             if result is False:
-                return False
+                return False, None
             elif result is None:
                 unknown_clauses.append(clause)
 
         if not unknown_clauses:
-            return True
+            return True, model
 
         p, value = find_pure_symbol(symbols, unknown_clauses)
 
@@ -182,10 +182,13 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> bool:
         return dpll_impl(rest, extend(model, p, True)) or dpll_impl(rest, extend(model, p, False))
 
     # if all models are false, then the query is entailed by kb
-    return not dpll_impl(_symbols, {})
+    result, model = dpll_impl(_symbols, {})
+    return not result, model
 
 
 def find_pure_symbol(symbols: list, clauses: list):
+    """Returns a symbol that has the same sign in all given clauses, along with the boolean value that
+    it must be assigned in order to make those clauses true."""
     for symbol in symbols:
         found_pos, found_neg = False, False
         for clause in clauses:
@@ -200,6 +203,8 @@ def find_pure_symbol(symbols: list, clauses: list):
 
 
 def find_unit_clause(clauses: list, model: dict):
+    """Returns a symbol from a unit clause and the boolean value that must be assigned to it in order
+    to make the unit clause true."""
     for clause in clauses:
         p, value = unit_clause_assign(clause, model)
         if p is not None:
@@ -208,6 +213,7 @@ def find_unit_clause(clauses: list, model: dict):
 
 
 def unit_clause_assign(clause: 'Expr', model: dict):
+    """Returns a symbol and the value needed for making the clause true in the given model."""
     p, value = None, None
 
     for literal in disjuncts(clause):
@@ -216,7 +222,7 @@ def unit_clause_assign(clause: 'Expr', model: dict):
             if model[symbol] == is_positive:
                 return None, None  # clause already true
         elif p is not None:
-            return None, None  # more than 1 unbound variable
+            return None, None  # more than 1 unknown variable
         else:
             p, value = symbol, is_positive
     return p, value
@@ -227,42 +233,3 @@ def inspect_literal(literal: 'Expr') -> Tuple['Expr', bool]:
     if literal.op == '~':
         return literal.args[0], False
     return literal, True
-
-# ______________________________________________________________________________
-# pl_resolution_entails
-
-
-def pl_resolution_entails(kb: List['Expr'], query: 'Expr') -> bool:
-    """
-    [Figure 7.12]
-    Propositional-logic resolution: say if alpha follows from KB.
-    >>> pl_resolution_entails(horn_clauses_KB, A)
-    True
-    """
-    clauses = kb + conjuncts(to_cnf(~query))
-    new = set()
-    while True:
-        n = len(clauses)
-        pairs = [(clauses[i], clauses[j])
-                 for i in range(n) for j in range(i + 1, n)]
-        for (ci, cj) in pairs:
-            resolvents = pl_resolve(ci, cj)
-            if False in resolvents:
-                return True
-            new = new.union(set(resolvents))
-        if new.issubset(set(clauses)):
-            return False
-        for c in new:
-            if c not in clauses:
-                clauses.append(c)
-
-
-def pl_resolve(ci: 'Expr', cj: 'Expr') -> List['Expr']:
-    """Return all clauses that can be obtained by resolving clauses ci and cj."""
-    clauses = []
-    for di in disjuncts(ci):
-        for dj in disjuncts(cj):
-            if di == ~dj or ~di == dj:
-                clauses.append(associate('||', unique(remove_all(
-                    di, disjuncts(ci)) + remove_all(dj, disjuncts(cj)))))
-    return clauses
