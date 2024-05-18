@@ -11,23 +11,20 @@ def file_parser(filename: str) -> Tuple[list, str]:
         raise RuntimeError(f"file_parser: Failed to open file {filename}")
 
     file.readline()  # reads Tell
-    kb_str = file.readline().strip()  # get kb string
+    kb_str = ""
+
+    # get all the lines until "ASK" is reached
+    while True:
+        line = file.readline().strip()
+        if "ask" in line.lower():
+            break
+        kb_str += line
+
     # convert the kb string into sentences
     kb = [x.strip() for x in kb_str.split(';') if x]
-    get_next_non_blank_line(file)  # remove any blank lines and get to ASK
     query = file.readline().strip()  # get query
 
     return kb, query
-
-
-def get_next_non_blank_line(file):
-    """Discards all the blank lines until it gets to a non-blank line."""
-    line = file.readline().strip()
-
-    while line == "":
-        line = file.readline().strip()
-
-    return line
 
 
 def first(iterable, default=None):
@@ -41,15 +38,8 @@ def extend(s: dict, var: 'Expr', val: bool) -> dict:
 
 
 def remove_all(value, array: list) -> list:
-    """Return a copy of seq (or string) with all occurrences of item removed."""
-    if isinstance(array, str):
-        return array.replace(value, '')
-    elif isinstance(array, set):
-        rest = array.copy()
-        rest.remove(value)
-        return rest
-    else:
-        return [x for x in array if x != value]
+    """Removes all occurrences of 'value' from the given array."""
+    return [x for x in array if x != value]
 
 
 def unique(seq):
