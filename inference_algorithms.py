@@ -1,7 +1,7 @@
 """inference_algorithms.py: File containing entailment algorithms."""
 
-from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause, associate
-from utils import extend, remove_all, unique
+from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause
+from utils import extend, remove_all
 from typing import Tuple, Union, List, Any
 from collections import defaultdict, deque
 from cnf import to_cnf
@@ -12,25 +12,25 @@ from cnf import to_cnf
 
 def tt_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, int]:
     """Truth table entails checks if kb |= query by checking that kb => query is valid."""
-    model_count = [0]  # single element array so I can pass it as a reference
-    symbols = list(get_symbols(kb & query))
-    result = tt_check_all(kb, query, symbols, {}, model_count)
-    return result, model_count[0]
+    model_count = 0
+    _symbols = list(get_symbols(kb & query))
 
+    def tt_entails_impl(symbols: list, model: dict) -> bool:
+        nonlocal model_count
+        if not symbols:
+            # check if kb => query is true
+            if pl_true(kb, model):
+                result = pl_true(query, model)
+                model_count += 1 if result else 0
+                return result if result is not None else False
+            return True  # if kb is false in that model, then the implication statement is true
+        else:
+            p = symbols[0]
+            rest = symbols[1:]
+            return tt_entails_impl(rest, extend(model, p, True)) and tt_entails_impl(rest, extend(model, p, False))
 
-def tt_check_all(kb: 'Expr', query: 'Expr', symbols: list, model: dict, model_count: list) -> bool:
-    if not symbols:
-        # check if kb => query is true
-        if pl_true(kb, model):
-            result = pl_true(query, model)
-            model_count[0] += 1 if result else 0
-            return result if result is not None else False
-        return True  # if kb is false in that model, then the implication statement is true
-    else:
-        p = symbols[0]
-        rest = symbols[1:]
-        return (tt_check_all(kb, query, rest, extend(model, p, True), model_count) and
-                tt_check_all(kb, query, rest, extend(model, p, False), model_count))
+    result = tt_entails_impl(_symbols, {})
+    return result, model_count
 
 
 def pl_true(exp: 'Expr', model: dict) -> Union[bool, None]:
