@@ -100,15 +100,15 @@ def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
     inferred_symbols = []
 
     while agenda:
-        proposition = agenda.popleft()
+        p = agenda.popleft()
 
-        if proposition == query:
-            inferred_symbols.append(proposition)
+        if p == query:
+            inferred_symbols.append(p)
             return True, inferred_symbols
-        if not inferred[proposition]:
-            inferred[proposition] = True
-            inferred_symbols.append(proposition)
-            for clause in clauses_with_premise(kb, proposition):
+        if not inferred[p]:
+            inferred[p] = True
+            inferred_symbols.append(p)
+            for clause in clauses_with_premise(kb, p):
                 count[clause] -= 1
                 if count[clause] == 0:
                     agenda.append(clause.args[1])
@@ -122,17 +122,15 @@ def fc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
 def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
     assert all(is_definite_clause(e) for e in kb), "bc_entails: an expression in the kb is not in definite form"
     symbols = [s for s in kb if is_symbol(s.op)]
-    inferred_symbols = []  # list of symbols that are entailed by bc
     expr_cache = []  # cache that stores calculated definite clauses, so they don't have to be re-calculated
+    inferred_symbols = []
 
     # recursive implementation of bc
     def truth_value(q) -> bool:
         if q in symbols:
             inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
             return True
-        elif not is_symbol(q.op):
-            return truth_value(q.args[0]) and truth_value(q.args[1])
-        else:
+        elif is_symbol(q.op):
             for clause in clauses_with_conclusion(kb, q):
                 if clause in expr_cache:
                     return True  # clause is already in the cache, so return True
@@ -141,6 +139,8 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
                     inferred_symbols.append(clause.args[1])  # add new inferred symbol
                     return True
             return False
+        else:
+            return truth_value(q.args[0]) and truth_value(q.args[1])
 
     return truth_value(query), inferred_symbols
 
