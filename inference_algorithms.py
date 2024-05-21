@@ -1,4 +1,4 @@
-"""inference_algorithms.py: File containing entailment algorithms."""
+"""inference_algorithms.py: File containing inference algorithms."""
 
 from expr import Expr, is_symbol, get_symbols, conjuncts, disjuncts, clauses_with_premise, clauses_with_conclusion, is_definite_clause
 from utils import extend, remove_all
