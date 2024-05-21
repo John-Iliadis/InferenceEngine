@@ -40,8 +40,3 @@ def extend(s: dict, var: 'Expr', val: bool) -> dict:
 def remove_all(value, array: list) -> list:
     """Removes all occurrences of 'value' from the given array."""
     return [x for x in array if x != value]
-
-
-def unique(seq):
-    """Remove duplicate elements from seq. Assumes hashable elements."""
-    return list(set(seq))

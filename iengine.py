@@ -1,3 +1,5 @@
+"""iengine.py: This is the main file."""
+
 import sys
 from inference_algorithms import tt_entails, fc_entails, bc_entails, dpll_entails
 from expr import kb2expr, kb2expr_list, expr
