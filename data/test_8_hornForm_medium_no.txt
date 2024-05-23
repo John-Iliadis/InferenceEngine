@@ -1,0 +1,4 @@
+TELL
+V => A; G => Y; G => A; Y & G => W; W => P; N => H; A & Y & G & W & V => B; W & N & G & K => J; V & K => B; G & K & W => Z; V;G
+ASK
+N
