@@ -8,7 +8,7 @@ def to_cnf(s: 'Expr') -> 'Expr':
     """Converts a propositional logical sentence to conjunctive normal form."""
     s = eliminate_implications(s)
     s = move_not_inwards(s)
-    s = distribute_and_over_or(s)
+    s = distribute_or_over_and(s)
     return s
 
 
@@ -48,15 +48,15 @@ def move_not_inwards(s):
         return Expr(s.op, *list(map(move_not_inwards, s.args)))
 
 
-def distribute_and_over_or(s: 'Expr') -> 'Expr':
+def distribute_or_over_and(s: 'Expr') -> 'Expr':
     """Given a sentence s consisting of conjunctions and disjunctions
     of literals, returns an equivalent sentence in CNF."""
     if s.op == '||':
         s = associate('||', s.args)
         if s.op != '||':
-            return distribute_and_over_or(s)
+            return distribute_or_over_and(s)
         elif len(s.args) == 1:
-            return distribute_and_over_or(s.args[0])
+            return distribute_or_over_and(s.args[0])
         elif len(s.args) == 0:
             assert False
 
@@ -68,8 +68,8 @@ def distribute_and_over_or(s: 'Expr') -> 'Expr':
         others = [a for a in s.args if a is not conj]
         rest = associate('||', others)
 
-        return associate('&', [distribute_and_over_or(c | '||' | rest) for c in conj.args])
+        return associate('&', [distribute_or_over_and(c | '||' | rest) for c in conj.args])
     elif s.op == '&':
-        return associate('&', list(map(distribute_and_over_or, s.args)))
+        return associate('&', list(map(distribute_or_over_and, s.args)))
     else:
         return s
