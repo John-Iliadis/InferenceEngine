@@ -166,11 +166,13 @@ def dpll_entails(kb: 'Expr', query: 'Expr') -> Tuple[bool, Any]:
         if not unknown_clauses:
             return True, model
 
+        # get pure symbol and the value used for eliminating that symbol
         p, value = find_pure_symbol(symbols, unknown_clauses)
 
         if p is not None:
             return dpll_impl(remove_all(p, symbols), extend(model, p, value))
 
+        # get the unassigned symbol of a unit clause and the value required for making that clause true
         p, value = find_unit_clause(clauses, model)
 
         if p is not None:
@@ -220,9 +222,9 @@ def unit_clause_assign(clause: 'Expr', model: dict):
         symbol, is_positive = inspect_literal(literal)
         if symbol in model:
             if model[symbol] == is_positive:
-                return None, None  # clause already true
+                return None, None  # clause already evaluated to true
         elif p is not None:
-            return None, None  # more than 1 unknown variable
+            return None, None  # more than 1 unknown variable exists in the clause
         else:
             p, value = symbol, is_positive
     return p, value
