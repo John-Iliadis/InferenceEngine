@@ -127,11 +127,13 @@ def bc_entails(kb: List['Expr'], query: 'Expr') -> Tuple[bool, list]:
 
     # recursive implementation of bc
     def truth_value(q) -> bool:
-        if q in symbols:
+        if q in symbols or q in inferred_symbols:
             inferred_symbols.append(q) if q not in inferred_symbols else 0  # store symbol if it's not already entailed
             return True
         elif is_symbol(q.op):
-            for clause in clauses_with_conclusion(kb, q):
+            # get all clauses whose conclusion is q. Skip clauses where q is in the premise to avoid stack overflow
+            clauses = [clause for clause in clauses_with_conclusion(kb, q) if q not in get_symbols(clause.args[0])]
+            for clause in clauses:
                 if clause in expr_cache:
                     return True  # clause is already in the cache, so return True
                 elif truth_value(clause.args[0]):
