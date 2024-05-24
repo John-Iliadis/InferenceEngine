@@ -1,4 +1,0 @@
-TELL
-My => I; ~My => (~I & Mam); I || Mam => H; H => Ma
-ask
-H

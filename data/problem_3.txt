@@ -1,4 +1,0 @@
-tell
-B; A; A & B => L; A & P => L; B & L => M; L & M => P; P => Q
-ask
-Q
