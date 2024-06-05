@@ -1,4 +1,0 @@
-TELL
-P & Z & V & K & F => E; P & W & Z & E & N & K & F & V & N & E => L; P & W & F & N => R; W & E & F & E & K & N & P & V => P; N & N => J; W & S & N => B; N => K; E & N & W & F & P & K & V & Z => E; E & Z & E & P & F & K & N => N; V & N & Z & W & F => G; W & F & N & K & P & Z & N & E => T; W => N; Z => W; F & P & W & Z & E & E & N & V & N & K => V; P => Z; P & N & E & E & W & Z & F & N & K & V => P; E & W & N & N & K & Z & V & P & F => B; P & Z & V & E & W & F & E & N & K => N; N & Z & P & N => M; N & K & W & E & P & Z & N & E & F & V => H; V & W & E & N & P => B; V & W & Z => E; N & V & E => S; Z & K & W & P & F & E & V & N & E => V; E & P & E & N & V => C; Z & E & E => K; W & V & E & E & K & P & Z & F & N & N => P; E & W & Z & P & K & N => P; F & W & V & E & P & Z & E & K & N & N => W; P & E & E & Z & K & N => P;P;F
-ASK
-TT
