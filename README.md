@@ -1,4 +1,4 @@
-# Inference engine implemented for COS30019 - Intro to AI
+# High-distinction project implemented for COS30019.
 
 Given a knowledge base KB and a query q as input, the program checks if KB entails q using a specified inference algorithm.
 
